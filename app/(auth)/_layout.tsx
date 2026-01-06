@@ -1,9 +1,10 @@
 import {
- View, Text, KeyboardAvoidingView, Platform, ScrollView,
+ View,
+ KeyboardAvoidingView, Platform, ScrollView,
  Dimensions,
- ImageBackground
+ ImageBackground,
+ Image
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
 import { Slot } from 'expo-router'
 import { images } from '@/constants'
 
@@ -20,9 +21,13 @@ export default function _Layout() {
             className="size-full rounded-b-lg"
             resizeMode="stretch"
           />
+          <Image
+            source={images.logo}
+            className="self-center size-48 absolute -bottom-16 z-10"
+          />
         </View>
-      </ScrollView>
       <Slot />
+      </ScrollView>
     </KeyboardAvoidingView>
   )
 }
