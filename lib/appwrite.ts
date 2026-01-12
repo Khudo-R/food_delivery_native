@@ -1,8 +1,77 @@
+import { CreateUserPrams, SignInParams } from "@/type";
+import {
+ Account, Avatars, Client, ID, TablesDB, Databases,
+ Query
+} from "react-native-appwrite"
 
 export const appwriteConfig = {
-  endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT,
+  endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!,
+  projectId: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!,
   platform: 'com.khudo.foodorder',
-  projectId: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
   databaseId: '6959d709001234d2f925',
   userTableId: 'user'
+}
+
+export const client = new Client()
+
+client
+  .setEndpoint(appwriteConfig.endpoint)
+  .setProject(appwriteConfig.projectId)
+  .setPlatform(appwriteConfig.platform);
+
+export const account = new Account(client);
+export const databases = new TablesDB(client);
+export const avatars = new Avatars(client);
+
+export const createUser = async ({email, password, name}: CreateUserPrams) => {
+  try {
+    const newAccount = await account.create({
+      userId: ID.unique(),
+      email,
+      password,
+      name
+    });
+
+    if (!newAccount) throw Error
+
+    const avatarUrl = avatars.getInitialsURL(name)
+
+    const newUser = await databases.createRow({
+      databaseId: appwriteConfig.databaseId,
+      tableId: appwriteConfig.userTableId,
+      data: { accountId: newAccount.$id, name, email, avatar: avatarUrl },
+      rowId: ID.unique(),
+    });
+
+    return newUser;
+  } catch (error) {
+    throw new Error(error as string);
+  }
+}
+
+export const signIn = async ({ email, password }: SignInParams) => {
+  try {
+    const session = await account.createEmailPasswordSession({ email, password });
+  } catch (error) {
+    throw new Error(error as string);
+  }
+}
+
+export const getCurrentUser = async () => {
+  try {
+    const currentAccount = await account.get();
+    if (!currentAccount) throw Error;
+    
+
+    const users = await databases.listRows({
+      databaseId: appwriteConfig.databaseId,
+      tableId: appwriteConfig.userTableId,
+      queries: [Query.equal('accountId', currentAccount.$id)],
+    });
+
+    if (users.total === 0) throw Error;
+    return users.rows[0];
+  } catch (error) {
+    throw new Error(error as string);
+  }
 }
